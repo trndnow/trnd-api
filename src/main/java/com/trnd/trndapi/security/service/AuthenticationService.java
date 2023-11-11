@@ -6,6 +6,7 @@ import com.trnd.trndapi.security.entity.User;
 import com.trnd.trndapi.security.enums.AccountStatus;
 import com.trnd.trndapi.security.enums.ERole;
 import com.trnd.trndapi.security.enums.TokenType;
+import com.trnd.trndapi.security.events.UserCreatedEvent;
 import com.trnd.trndapi.security.jwt.JwtUtils;
 import com.trnd.trndapi.security.playload.request.LoginRequest;
 import com.trnd.trndapi.security.playload.request.SignupRequest;
@@ -19,6 +20,7 @@ import com.trnd.trndapi.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +49,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public ResponseEntity<?> registerUser(SignupRequest signupRequest) {
         if(signupRequest.getRole().contains("merchant") && signupRequest.getMerchantName().isEmpty()){
@@ -103,12 +106,14 @@ public class AuthenticationService {
 
         User savedUser =  userRepository.save(user);
 
-//        TODO:Trigger merchant registration event
-
         String jwtToken = jwtUtils.generateToken(UserDetailsImpl.build(user));
         String refreshToken = jwtUtils.generateRefreshToken(UserDetailsImpl.build(user));
         savedUserToken(savedUser, jwtToken);
 
+        //TODO:Trigger User registration event'
+
+        UserCreatedEvent userCreatedEvent = new UserCreatedEvent(savedUser);
+        applicationEventPublisher.publishEvent(userCreatedEvent);
 
         return   ResponseEntity.ok(JwtResponse.builder()
                 .username(savedUser.getMobile())

@@ -3,6 +3,7 @@ package com.trnd.trndapi.merchant.dto;
 import com.trnd.trndapi.commons.dto.AddressCityRefDto;
 import com.trnd.trndapi.commons.dto.BusinessServiceCategoryRefDto;
 import com.trnd.trndapi.commons.dto.TimezoneRefDto;
+import com.trnd.trndapi.security.dto.UserDto;
 import com.trnd.trndapi.subscription.entity.ProductMerchantSubscription;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Builder;
@@ -23,7 +24,7 @@ public class MerchantDto implements Serializable {
     LocalDateTime createdDate;
     LocalDateTime modifiedDate;
     long merch_id;
-    @NotEmpty
+//    @NotEmpty
     String merch_nm;
     String merch_descr;
     BusinessServiceCategoryRefDto bus_svc_cat_id;
@@ -32,7 +33,7 @@ public class MerchantDto implements Serializable {
     String merch_unique_link;
     String merch_qr_code;
     String merch_unique_code;
-    @NotEmpty
+//    @NotEmpty
     String merch_addr_in1;
     String merch_addr_in2;
     AddressCityRefDto addr_city_id;
@@ -51,4 +52,5 @@ public class MerchantDto implements Serializable {
     String merch_transact_sec_currency_cd;
     String merch_is_deleted_flg;
     List<ProductMerchantSubscription> productMerchantSubscriptions;
+    UserDto user;
 }

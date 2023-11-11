@@ -3,11 +3,13 @@ package com.trnd.trndapi.merchant.service;
 import com.trnd.trndapi.commons.mapper.AddressCityRefMapper;
 import com.trnd.trndapi.commons.mapper.BusinessServiceCategoryRefMapper;
 import com.trnd.trndapi.commons.mapper.TimezoneRefMapper;
+import com.trnd.trndapi.commons.util.DateTimeUtils;
 import com.trnd.trndapi.merchant.dto.MerchantDto;
 import com.trnd.trndapi.merchant.entity.Merchant;
 import com.trnd.trndapi.merchant.exception.MerchantNoFoundException;
 import com.trnd.trndapi.merchant.mapper.MerchantMapper;
 import com.trnd.trndapi.merchant.repositoty.MerchantRepository;
+import com.trnd.trndapi.security.playload.response.MessageResponse;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,7 +26,7 @@ public class MerchantServiceImpl implements MerchantService{
     }
 
     @Override
-    public MerchantDto viewMerchant(String merch_nm) {
+    public MerchantDto viewMerchant(String merchName) {
         return null;
     }
 
@@ -64,5 +66,18 @@ public class MerchantServiceImpl implements MerchantService{
         Merchant savedMerchant = merchantRepository.save(merchant);
 
         return MerchantMapper.INSTANCE.toDto(savedMerchant);
+    }
+
+    @Override
+    public MessageResponse deleteAccount(String email) {
+        Merchant merchant = merchantRepository.findByEmail(email).orElseThrow(() -> new MerchantNoFoundException("ERROR: Merchant not found"));
+        merchant.setMerch_delete_account_dt(DateTimeUtils.getDateTimeAfterThirtyDaysAtElevenPM());
+        merchant.setMerch_is_deleted_flg(Boolean.TRUE.toString());
+        merchantRepository.save(merchant);
+        //TODO: Trigger DELETE_ACCOUNT_EVENT for invalidating the password in the User table.
+        //TODO: Write a batch job to delete the account after 30 days at 11:00PM
+        //TODO: Disable the account
+        return MessageResponse.builder()
+                .message("YOUR ACCOUNT WILL BE PERMANENTLY DELETED AFTER 30 DAYS").build();
     }
 }

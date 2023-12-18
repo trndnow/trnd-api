@@ -1,6 +1,6 @@
 package com.trnd.trndapi.security.jwt;
 
-import com.trnd.trndapi.security.repository.TokenRepository;
+import com.trnd.trndapi.repository.TokenRepository;
 import com.trnd.trndapi.security.service.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,7 +40,14 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
                 return;
             }
-            jwt = authHeader.substring(7);
+
+            jwt = getJwtFromRequest(request);
+            if (jwt == null) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Bearer token is not present");
+                return;
+            }
+            //jwt = authHeader.substring(7);
+
             username = jwtUtils.extractUsername(jwt);
             if(username != null && SecurityContextHolder.getContext().getAuthentication() == null){
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -63,10 +70,17 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             filterChain.doFilter(request,response);
         }catch(Exception e){
             log.error("Cannot set user authentication: {}", e.getMessage());
-            System.out.println(e.getStackTrace());
         }
 
     }
+    private String getJwtFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ") && !bearerToken.equalsIgnoreCase("Bearer null")) {
+            return bearerToken.substring(7); // Extract the token part
+        }
+        return null;
+    }
+
 
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");

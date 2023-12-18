@@ -1,6 +1,7 @@
 package com.trnd.trndapi.security.playload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.trnd.trndapi.enums.ERole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,6 +23,9 @@ public class JwtResponse {
     private UUID uuid;
     private String username;
     private String email;
-    private List<String> roles;
+    private ERole role;
+    private boolean isProfileCompleted = false;
+    private int profileCompletionPercentage = 0;
+
 
 }

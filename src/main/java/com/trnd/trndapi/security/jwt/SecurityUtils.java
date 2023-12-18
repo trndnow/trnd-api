@@ -39,4 +39,9 @@ public class SecurityUtils {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
     }
+    public static boolean hasRole(String role) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(role));
+    }
 }

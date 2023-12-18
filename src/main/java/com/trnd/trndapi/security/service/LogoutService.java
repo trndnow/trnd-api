@@ -1,7 +1,7 @@
 package com.trnd.trndapi.security.service;
 
-import com.trnd.trndapi.security.enums.TokenType;
-import com.trnd.trndapi.security.repository.TokenRepository;
+import com.trnd.trndapi.enums.TokenType;
+import com.trnd.trndapi.repository.TokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

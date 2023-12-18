@@ -1,15 +1,15 @@
 package com.trnd.trndapi.security.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.trnd.trndapi.security.entity.User;
+import com.trnd.trndapi.entity.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class UserDetailsImpl implements UserDetails {
 
@@ -30,8 +30,9 @@ public class UserDetailsImpl implements UserDetails {
     }
 
     public static UserDetailsImpl build(User user){
-        List<SimpleGrantedAuthority> simpleGrantedAuthorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.getName().name())).collect(Collectors.toList());
+        List<SimpleGrantedAuthority> simpleGrantedAuthorities = Arrays.asList(new SimpleGrantedAuthority(user.getRole().getName().toString()))  ;
+//                user.getRoles().stream()
+//                .map(role -> new SimpleGrantedAuthority(role.getName().name())).collect(Collectors.toList());
 
         return new UserDetailsImpl(
                 user.getId(),

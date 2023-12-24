@@ -9,6 +9,8 @@ import java.util.Optional;
 
 @Repository
 public interface CampaignRepository extends JpaRepository<Campaign, Long> {
+    @Query("select count(c) from Campaign c")
+    long totalCampaignCount();
     @Query("SELECT c FROM Campaign c WHERE c.merchant.merchUniqueCode = : merchantCode")
     Optional<Campaign> findByMerchantCode(String merchantCode);
 

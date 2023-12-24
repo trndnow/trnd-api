@@ -9,6 +9,8 @@ import java.util.Optional;
 
 @Repository
 public interface MerchantRepository extends JpaRepository<Merchant, Long> {
+    @Query("select count(m) from Merchant m")
+    long totalMerchantCount();
     @Query("SELECT m FROM Merchant m where m.merchPriContactEmail = :email")
     Optional<Merchant> findByEmail(String email);
 

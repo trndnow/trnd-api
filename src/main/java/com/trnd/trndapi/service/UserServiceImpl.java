@@ -6,6 +6,7 @@ import com.trnd.trndapi.dto.UserDto;
 import com.trnd.trndapi.entity.User;
 import com.trnd.trndapi.enums.AccountStatus;
 import com.trnd.trndapi.enums.ERole;
+import com.trnd.trndapi.exception.MerchantNoFoundException;
 import com.trnd.trndapi.mapper.UserMapper;
 import com.trnd.trndapi.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -25,6 +26,7 @@ public class UserServiceImpl implements UserService{
     private final UserRepository userRepository;
     private final MerchantService merchantService;
     private final CampaignService campaignService;
+    private final UserMapper userMapper;
 
     /**
      * @return
@@ -33,7 +35,7 @@ public class UserServiceImpl implements UserService{
     public List<UserDto> getPendingApproval(ERole role) {
         Sort sort = Sort.by(Sort.Direction.ASC, "registrationDateTime");
         List<User> byUserStatus = userRepository.findByUserStatusAndRole_NameOrderByRegistrationDateTimeAsc(AccountStatus.INACTIVE, role, sort);
-        return UserMapper.INSTANCE.toDtoList(byUserStatus);
+        return userMapper.toDtoList(byUserStatus);
     }
 
     /**
@@ -45,12 +47,18 @@ public class UserServiceImpl implements UserService{
     @Transactional
     public List<UserDto> approveUser(List<UserDto> userDtoList, ERole role) {
         List<User> usersToUpdate = new ArrayList<>();
+        List<User> usersFiledToUpdate = new ArrayList<>();
         if(role.equals(ERole.ROLE_MERCHANT)){
             userDtoList.forEach(userDto -> {
-                User user = userRepository.findById(userDto.getId()).orElse(null);
+                User user = userRepository.findById(userDto.getId()).orElseThrow(() -> new MerchantNoFoundException("ERROR: Merchant not found with user id: "+ userDto.getId()));
                 if(user != null && user.getRole().getName().equals(ERole.ROLE_MERCHANT)){
-                    user.setUserStatus(AccountStatus.ACTIVE);
-                    usersToUpdate.add(user);
+                    if(user.isEmailVerifiedFlag()){
+                        user.setUserStatus(AccountStatus.ACTIVE);
+                        usersToUpdate.add(user);
+                    }else{
+                        user.setUserStatus(AccountStatus.INACTIVE);
+                        usersFiledToUpdate.add(user);
+                    }
                 }
             });
         } else if (role.equals(ERole.ROLE_AFFILIATE)) {
@@ -67,11 +75,13 @@ public class UserServiceImpl implements UserService{
         List<User> userList = userRepository.saveAll(usersToUpdate);
         if(role.equals(ERole.ROLE_MERCHANT)){
             userList.forEach(user -> {
-                MerchantDto merchantByMerchantUniqueCode = merchantService.getMerchantByMerchantUniqueCode(user.getUserCode());
+                MerchantDto merchantByMerchantUniqueCode = merchantService.getMerchantByMerchantCode(user.getUserCode());
+                merchantByMerchantUniqueCode.setMerchStatus(AccountStatus.ACTIVE);
+                merchantService.updateMerchant(merchantByMerchantUniqueCode);
                 CampaignDto campaignDto = campaignService.defaultCampaignAssociation(merchantByMerchantUniqueCode);
                 /** TODO:Create a mechanism to log failed operation, so the we can run a batch job to retry it at later point of time.*/
             });
         }
-        return UserMapper.INSTANCE.toDtoList(userList);
+        return userMapper.toDtoList(userList);
     }
 }

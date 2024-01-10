@@ -22,7 +22,7 @@ public class CampaignController {
     @PostMapping("/add")
     @PreAuthorize("hasRole('MERCHANT') or hasRole('ADMIN')")
     public ResponseEntity<?> addCampaign(@Valid @RequestBody CampaignDto campaignDto){
-        return ResponseEntity.ok( campaignService.addCampaign(campaignDto));
+        return ResponseEntity.ok(campaignService.addCampaign(campaignDto));
     }
     @PreAuthorize("hasRole('MERCHANT') or hasRole('ADMIN')")
     @GetMapping("/view/{campaignId}")
@@ -35,6 +35,9 @@ public class CampaignController {
         return new ResponseEntity<>(campaignService.viewAllCampaign(),HttpStatus.OK);
     }
 
-
+    @GetMapping("/view/byMerchantCode/{merchantCode}")
+    public ResponseEntity<?> viewCampaignByMerchantCode(@PathVariable String merchantCode){
+        return new ResponseEntity<>(campaignService.viewCampaignByMerchantCode(merchantCode),HttpStatus.OK);
+    }
 
 }

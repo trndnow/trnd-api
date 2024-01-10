@@ -10,7 +10,6 @@ import jakarta.validation.constraints.Max;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
@@ -19,13 +18,15 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "campaign")
+@Table(name = "campaign", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"merch_id","camp_cat_id","camp_start_dt"})
+})
 public class Campaign extends Auditable<String> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "camp_id")
     private long campId;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "merch_id")
     private Merchant merchant;
     @Column(name = "camp_private_nm")
@@ -40,8 +41,8 @@ public class Campaign extends Auditable<String> {
     @Enumerated(EnumType.STRING)
     @Column(name = "camp_type")
     private CampType campType;
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "camp_cat_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "camp_cat_id",unique = false)
     private CampaignCategoryRef campaignCategoryRef;
     @Column(name = "camp_start_dt")
     private LocalDate campStartDt;

@@ -1,4 +1,4 @@
-package com.trnd.trndapi.security.playload.response;
+package com.trnd.trndapi.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,12 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class MessageResponse<T> {
+public class ResponseDto<T> {
+    int code;
     private String statusCode;
-    private String message;
+    private String statusMsg;
     private T data;
-
-    public MessageResponse(String message){
-        this.message = message;
-    }
 }

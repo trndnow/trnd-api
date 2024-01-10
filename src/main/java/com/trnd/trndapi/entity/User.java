@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -42,6 +41,7 @@ public class User {
     private Role role;
     @Column(name = "is_soft_deleted")
     private boolean softDeleted = false;
+    @Enumerated(EnumType.STRING)
     private AccountStatus userStatus;
     private LocalDateTime registrationDateTime;
     private LocalDateTime lastLoginDateTime;

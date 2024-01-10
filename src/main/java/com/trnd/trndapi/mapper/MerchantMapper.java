@@ -3,16 +3,22 @@ package com.trnd.trndapi.mapper;
 import com.trnd.trndapi.dto.MerchantDto;
 import com.trnd.trndapi.entity.Merchant;
 import org.mapstruct.*;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING)
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        componentModel = MappingConstants.ComponentModel.SPRING,
+        uses = BusinessServiceCategoryRefMapper.class,
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR
+)
 public interface MerchantMapper {
-    MerchantMapper INSTANCE = Mappers.getMapper(MerchantMapper.class);
 
+    @Mapping(target = "businessServiceCategoryRef", source = "businessServiceCategoryRefDto")
     Merchant toEntity(MerchantDto merchantDto);
 
+    List<Merchant> toEntityList(List<MerchantDto> merchantDtoList);
+
+    @Mapping( target = "businessServiceCategoryRefDto", source = "businessServiceCategoryRef")
     MerchantDto toDto(Merchant merchant);
 
     List<MerchantDto> toDtoList(List<Merchant> merchantList);

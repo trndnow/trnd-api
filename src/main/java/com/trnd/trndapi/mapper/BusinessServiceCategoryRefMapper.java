@@ -3,13 +3,11 @@ package com.trnd.trndapi.mapper;
 import com.trnd.trndapi.dto.BusinessServiceCategoryRefDto;
 import com.trnd.trndapi.entity.BusinessServiceCategoryRef;
 import org.mapstruct.*;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING)
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING, injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface BusinessServiceCategoryRefMapper {
-    BusinessServiceCategoryRefMapper INSTANCE = Mappers.getMapper(BusinessServiceCategoryRefMapper.class);
 
     BusinessServiceCategoryRef toEntity(BusinessServiceCategoryRefDto businessServiceCategoryRefDto);
 

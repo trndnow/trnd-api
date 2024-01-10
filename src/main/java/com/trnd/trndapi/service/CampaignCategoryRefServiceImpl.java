@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CampaignCategoryRefServiceImpl implements CampaignCategoryRefService{
     private final CampaignCategoryRefRepository campaignCategoryRefRepository;
+    private final CampaignCategoryRefMapper campaignCategoryRefMapper;
 
     /**
      * @param name
@@ -21,6 +22,6 @@ public class CampaignCategoryRefServiceImpl implements CampaignCategoryRefServic
     @Override
     public CampaignCategoryRefDto getCampaignCategoryByName(String name) {
         CampaignCategoryRef byCampCatNm = campaignCategoryRefRepository.findByCampCatNm(name);
-        return CampaignCategoryRefMapper.INSTANCE.toDto(byCampCatNm);
+        return campaignCategoryRefMapper.toDto(byCampCatNm);
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class CampaignAffiliateServiceImpl implements CampaignAffiliateService{
 
     private final CampaignAffiliateRepository campaignAffiliateRepository;
+    private final CampaignAffiliateMapper campaignAffiliateMapper;
 
     /**
      * @param campaignAffiliate
@@ -22,6 +23,6 @@ public class CampaignAffiliateServiceImpl implements CampaignAffiliateService{
     @Override
     public CampaignAffiliateDto create(CampaignAffiliate campaignAffiliate) {
         CampaignAffiliate saveCampAffiliate = campaignAffiliateRepository.save(campaignAffiliate);
-        return CampaignAffiliateMapper.INSTANCE.toDto(saveCampAffiliate);
+        return campaignAffiliateMapper.toDto(saveCampAffiliate);
     }
 }

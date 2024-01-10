@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Field;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -23,7 +22,7 @@ public class MerchantProfileCompletenessCalculator implements ProfileCompletenes
      * @return
      */
     @Override
-    public int calculateProfileCompleteness(User user) {
+    public int calculateProfileCompleteness(User user)  {
         Merchant merchant = merchantRepository.findByEmail(user.getEmail()).orElseThrow(()-> new MerchantNoFoundException("Error: Merchant not found"));
         Field[] fields = Merchant.class.getDeclaredFields();
         int totalFields = fields.length; // Total number of fields considered for profile completeness

@@ -1,5 +1,7 @@
 package com.trnd.trndapi.security.service;
 
+import com.trnd.trndapi.dto.ResponseDto;
+import com.trnd.trndapi.entity.Merchant;
 import com.trnd.trndapi.entity.Role;
 import com.trnd.trndapi.entity.Token;
 import com.trnd.trndapi.entity.User;
@@ -18,11 +20,9 @@ import com.trnd.trndapi.security.playload.request.TokenRefreshRequest;
 import com.trnd.trndapi.security.playload.response.JwtResponse;
 import com.trnd.trndapi.security.playload.response.MessageResponse;
 import com.trnd.trndapi.security.playload.response.TokenRefreshResponse;
-import com.trnd.trndapi.service.CodeGeneratorService;
-import com.trnd.trndapi.service.OtpService;
-import com.trnd.trndapi.service.ProfileCompletenessCalculator;
-import com.trnd.trndapi.service.UserCompletenessCalculatorFactory;
+import com.trnd.trndapi.service.*;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -59,14 +59,33 @@ public class AuthenticationService {
     private final OtpService otpService;
     private final UserCompletenessCalculatorFactory profileCalculatorFactory;
     private final CodeGeneratorService codeGeneratorService;
+    public final BusinessServiceCategoryService businessServiceCategoryService;
+    private final MerchantService merchantService;
 
+    @Transactional
     public ResponseEntity<?> registerUser(SignupRequest signupRequest) {
+
         if(signupRequest.getRole().equals(ERole.ROLE_MERCHANT) && signupRequest.getMerchantName().isEmpty()){
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid Request. Merchant Name is mandatory to register as Merchant."));
+            return ResponseEntity.badRequest().body(MessageResponse.builder()
+                    .message("Merchant Name is mandatory to register as merchant.")
+                    .statusCode(HttpStatus.BAD_REQUEST.toString()).build()
+            );
         }
-        if(signupRequest.getRole().equals(ERole.ROLE_AFFILIATE.name()) && signupRequest.getMerchantCode().isEmpty()){
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid Request. Merchant Code is mandatory to register as Affiliate."));
+        if(signupRequest.getRole().equals(ERole.ROLE_AFFILIATE) && signupRequest.getMerchantCode().isEmpty()){
+            return ResponseEntity.badRequest().body(MessageResponse.builder()
+                    .message("Merchant Code is mandatory to register as Affiliate.")
+                    .statusCode(HttpStatus.BAD_REQUEST.toString()).build());
         }
+        if(signupRequest.getRole().equals(ERole.ROLE_AFFILIATE) && !signupRequest.getMerchantCode().isEmpty()){
+            /** CHECK IF MERCHANT_CODE IS VALID
+             */
+            Optional<Merchant> byMerchantCode = merchantRepository.findByMerchantCode(signupRequest.getMerchantCode());
+            if(byMerchantCode.isEmpty()){
+                return ResponseEntity.badRequest().body(MessageResponse.builder()
+                        .message("Merchant Code is invalid").statusCode(HttpStatus.BAD_REQUEST.toString()).build());
+            }
+        }
+
         if (userRepository.existsByMobile(signupRequest.getMobile())) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: Mobile is already exist"));
         }
@@ -78,9 +97,11 @@ public class AuthenticationService {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: OTP Expired!"));
         }
         //TODO: Check if Admin already exist dont create the account.
-        Boolean userByRoleName = userRepository.existsUserByRoleName(signupRequest.getRole());
-        if(userByRoleName)
-            return ResponseEntity.badRequest().body( new MessageResponse("Cannot register as admin role"));
+        if(signupRequest.getRole().equals(ERole.ROLE_ADMIN)){
+            Boolean userByRoleName = userRepository.existsUserByRoleName(signupRequest.getRole());
+            if(userByRoleName)
+                return ResponseEntity.badRequest().body( new MessageResponse("Cannot register as admin role"));
+        }
         //     String
         AtomicReference<String> currentActiveRole = new AtomicReference<>();
         if(signupRequest.getRole().name().isEmpty()){
@@ -130,6 +151,7 @@ public class AuthenticationService {
             user.setEmailVerifiedFlag(true);
         }
 
+        //TODO: Call user service
         User savedUser =  userRepository.save(user);
 
 //        String jwtToken = jwtUtils.generateToken(UserDetailsImpl.build(user));
@@ -140,13 +162,21 @@ public class AuthenticationService {
         UserCreatedEvent userCreatedEvent = new UserCreatedEvent(savedUser, signupRequest);
         applicationEventPublisher.publishEvent(userCreatedEvent);
 
-        return   ResponseEntity.ok(JwtResponse.builder()
-                .username(savedUser.getMobile())
-                .email(savedUser.getEmail())
-                .uuid(savedUser.getUniqueId())
-//                .accessToken(jwtToken)
-//                .refreshToken(refreshToken)
-                .role(savedUser.getRole().getName())
+
+        return   ResponseEntity.ok(ResponseDto.builder()
+                .code(HttpStatus.CREATED.value())
+                .statusCode(HttpStatus.CREATED.toString())
+                .statusMsg("User Created Successfully")
+                        .data(
+                                JwtResponse.builder()
+                                        .username(savedUser.getMobile())
+                                        .email(savedUser.getEmail())
+                                        .uuid(savedUser.getUniqueId())
+//                                      .accessToken(jwtToken)
+//                                      .refreshToken(refreshToken)
+                                        .role(savedUser.getRole().getName())
+                                        .build()
+                        )
                 .build());
 
     }
@@ -182,7 +212,7 @@ public class AuthenticationService {
                 jwtResponse.setProfileCompletionPercentage(profileCompletionPercentage);
             }
         }
-        return   ResponseEntity.ok(jwtResponse);
+        return   ResponseEntity.ok().body(jwtResponse);
     }
 
     private int calculateProfileCompleteness(User savedUser) {

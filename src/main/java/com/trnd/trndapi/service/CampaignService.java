@@ -2,6 +2,7 @@ package com.trnd.trndapi.service;
 
 import com.trnd.trndapi.dto.CampaignDto;
 import com.trnd.trndapi.dto.MerchantDto;
+import com.trnd.trndapi.dto.ResponseDto;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,4 +17,6 @@ public interface CampaignService {
     CampaignDto defaultCampaignAssociation(MerchantDto merchantDto);
 
     CampaignDto getCampaignByMerchantCode(String merchantCode);
+
+    ResponseDto viewCampaignByMerchantCode(String merchantCode);
 }

@@ -16,15 +16,16 @@ import java.util.List;
 public class BusinessServiceCategoryServiceImpl implements BusinessServiceCategoryService{
 
     private final BusinessServiceCategoryRefRepository businessServiceCategoryRefRepository;
+    private final BusinessServiceCategoryRefMapper businessServiceCategoryRefMapper;
     @Override
     public BusinessServiceCategoryRefDto addBusinessServiceCategory(BusinessServiceCategoryRefDto businessServiceCategoryRefDto) {
-        BusinessServiceCategoryRef serviceCategoryRef = businessServiceCategoryRefRepository.save(BusinessServiceCategoryRefMapper.INSTANCE.toEntity(businessServiceCategoryRefDto));
-        return BusinessServiceCategoryRefMapper.INSTANCE.toDto(serviceCategoryRef);
+        BusinessServiceCategoryRef serviceCategoryRef = businessServiceCategoryRefRepository.save(businessServiceCategoryRefMapper.toEntity(businessServiceCategoryRefDto));
+        return businessServiceCategoryRefMapper.toDto(serviceCategoryRef);
     }
 
     @Override
     public List<BusinessServiceCategoryRefDto> viewAllBusinessServiceCategory() {
-       return BusinessServiceCategoryRefMapper.INSTANCE.toDtoList(businessServiceCategoryRefRepository.findAll());
+       return businessServiceCategoryRefMapper.toDtoList(businessServiceCategoryRefRepository.findAll());
     }
 
     @Override
@@ -38,6 +39,6 @@ public class BusinessServiceCategoryServiceImpl implements BusinessServiceCatego
     @Override
     public BusinessServiceCategoryRefDto getDefaultBusinessCategory() {
         BusinessServiceCategoryRef businessServiceCategoryRef = businessServiceCategoryRefRepository.findByBusSvcCatNmIgnoreCase("Default").orElseThrow(() -> new RuntimeException("Error: Business category not found."));
-        return BusinessServiceCategoryRefMapper.INSTANCE.toDto(businessServiceCategoryRef);
+        return businessServiceCategoryRefMapper.toDto(businessServiceCategoryRef);
     }
 }

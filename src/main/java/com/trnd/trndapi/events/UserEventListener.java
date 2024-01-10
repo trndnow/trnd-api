@@ -10,20 +10,21 @@ import com.trnd.trndapi.enums.AccountStatus;
 import com.trnd.trndapi.enums.AffiliateStatus;
 import com.trnd.trndapi.enums.ERole;
 import com.trnd.trndapi.enums.ProfileStatus;
-import com.trnd.trndapi.mapper.*;
+import com.trnd.trndapi.mapper.AffiliateMapper;
+import com.trnd.trndapi.mapper.CampaignMapper;
+import com.trnd.trndapi.mapper.MerchantMapper;
+import com.trnd.trndapi.mapper.UserMapper;
 import com.trnd.trndapi.service.*;
 import com.trnd.trndapi.utils.CommonUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 
 @Component
 @Slf4j
@@ -35,6 +36,10 @@ public class UserEventListener {
     private final CampaignAffiliateService campaignAffiliateService;
     public final BusinessServiceCategoryService businessServiceCategoryService;
     private final CodeGeneratorService codeGeneratorService;
+    private final UserMapper userMapper;
+    private final MerchantMapper merchantMapper;
+    private final CampaignMapper campaignMapper;
+    private final AffiliateMapper affiliateMapper;
 
     @EventListener
     @Async
@@ -58,7 +63,7 @@ public class UserEventListener {
                     .merchStatus(AccountStatus.INACTIVE)
                     .profileStatus(ProfileStatus.INCOMPLETE)
                     .createdDate(LocalDateTime.now())
-                    .user(UserMapper.INSTANCE.toDto(event.getUser()))
+                    .user(userMapper.toDto(event.getUser()))
                     .build();
             log.info("Creating Merchant Entry");
             merchantService.createMerchant(merchantDto);
@@ -84,7 +89,7 @@ public class UserEventListener {
                 .affStatus(AffiliateStatus.INACTIVE)
                 .profileStatus(ProfileStatus.INCOMPLETE)
                 .createdDate(LocalDateTime.now())
-                .user(UserMapper.INSTANCE.toDto(event.getUser()))
+                .user(userMapper.toDto(event.getUser()))
                 .build();
         AffiliateDto savedAffiliateDto =  affiliateService.createAffiliate(affiliateDto);
 
@@ -96,9 +101,9 @@ public class UserEventListener {
         String qrCodeImageAsBase64 = CommonUtils.generateQRCodeImageAsBase64(campaignUniqueLink, 250, 250);
 
         CampaignAffiliate campaignAffiliate = CampaignAffiliate.builder()
-                .campaign(CampaignMapper.INSTANCE.toEntity(campaignDto))
-                .affiliate(AffiliateMapper.INSTANCE.toEntity(savedAffiliateDto))
-                .merchant(MerchantMapper.INSTANCE.toEntity(merchantDto))
+                .campaign(campaignMapper.toEntity(campaignDto))
+                .affiliate(affiliateMapper.toEntity(savedAffiliateDto))
+                .merchant(merchantMapper.toEntity(merchantDto))
                 .campAffStartDate(LocalDateTime.now())
                 .campAffUniqueCode(campaignUniqueCode)
                 .campAffUniqueLink(campaignUniqueLink)
@@ -110,6 +115,10 @@ public class UserEventListener {
         //TODO: Send email template to affiliate the Registration is completed & Approval is pending from Merchant.
     }
 
+    /**
+     * @param uniqueCode
+     * @return
+     */
     @Deprecated
     /**
      *  The logic is move to CommonUtils.createMerchantUniqueLink

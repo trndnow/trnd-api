@@ -22,7 +22,7 @@ public class BusinessServiceCategoryRefController {
         return  ResponseEntity.ok(businessServiceCategoryService.addBusinessServiceCategory(businessServiceCategoryRefDto));
     }
 
-    @GetMapping("/view-all")
+    @GetMapping("/view_all")
     public ResponseEntity<?> viewAllBusinessServiceCategory(){
         return ResponseEntity.ok(businessServiceCategoryService.viewAllBusinessServiceCategory());
     }

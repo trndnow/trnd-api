@@ -1,15 +1,14 @@
 package com.trnd.trndapi.controller;
 
 import com.trnd.trndapi.dto.AffiliateDto;
-import com.trnd.trndapi.dto.MerchantDto;
 import com.trnd.trndapi.security.jwt.SecurityUtils;
 import com.trnd.trndapi.service.AffiliateService;
-import com.trnd.trndapi.service.MerchantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -29,17 +28,31 @@ public class AffiliateController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MERCHANT')")
     private ResponseEntity<?> viewAffiliate(@PathVariable Long id){
         return ResponseEntity.ok(affiliateService.viewAffiliate(id));
 
     }
 
+    @GetMapping("/view_profile")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('AFFILIATE')")
+    public ResponseEntity<?> viewProfile(){
+        return ResponseEntity.ok(affiliateService.viewProfile());
+    }
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MERCHANT')")
+    public ResponseEntity<?> viewAllAffiliate(){
+        return ResponseEntity.ok(affiliateService.viewAllAffiliate());
+    }
+
     @PostMapping("/update")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('AFFILIATE')")
     private ResponseEntity<?> updateAffiliate(@RequestBody AffiliateDto affiliateDto){
         return ResponseEntity.ok(affiliateService.updateAffiliate(affiliateDto));
     }
 
     @GetMapping("/delete-account")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('AFFILIATE')")
     private ResponseEntity<?> deleteAccount(){
         String email = SecurityUtils.getLoggedInUserName();
         affiliateService.deleteAccount(email);

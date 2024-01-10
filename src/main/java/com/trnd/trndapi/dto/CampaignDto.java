@@ -1,65 +1,78 @@
 package com.trnd.trndapi.dto;
 
-import com.trnd.trndapi.entity.Campaign;
-import com.trnd.trndapi.entity.CampaignCategoryRef;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.trnd.trndapi.annotation.ValidIncentiveMethod;
+import com.trnd.trndapi.annotation.ValidUnit;
 import com.trnd.trndapi.enums.CampStatus;
 import com.trnd.trndapi.enums.CampType;
 import com.trnd.trndapi.enums.IncentiveMethod;
 import com.trnd.trndapi.enums.Unit;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import lombok.*;
+import com.trnd.trndapi.serializer.LocalDateSerializer;
+import com.trnd.trndapi.serializer.LocalDateTimeSerializer;
+import jakarta.validation.constraints.Max;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * DTO for {@link Campaign}
+ * DTO for {@link com.trnd.trndapi.entity.Campaign}
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class CampaignDto implements Serializable {
-    private long camp_id;
+public class CampaignDto implements Serializable{
+
+    private long campId;
     private MerchantDto merchant;
-    private String camp_private_nm;
-    private String public_nm;
-    private CampStatus camp_status;
-    private String camp_descr;
-    private CampType camp_type;
-    private CampaignCategoryRef campaignCategoryRef;
-    private LocalDate camp_start_dt;
-    private LocalDate camp_end_dt;
-    private String camp_goals_descr;
-    private int aff_incentive_per_refer;
-    @Enumerated(EnumType.STRING)
-    private Unit aff_incentive_per_refer_unit;
-    private int aff_incentive_per_sale;
-    @Enumerated(EnumType.STRING)
-    private Unit aff_incentive_per_sale_unit;
-    @Enumerated(EnumType.STRING)
-    private IncentiveMethod pros_incentive_method;
-    @Enumerated(EnumType.STRING)
-    private Unit pros_incentive_per_transact_unit;
-    private int minimum_sale_price_for_coupon;
-    private int camp_approx_cost_per_transact;
-    private int camp_budget;
-    private int max_aff_allowed;
-    private int max_pros_submit_allowed;
-    private int max_pros_submit_allowed_per_aff;
-    private int unique_coupon_count_total;
-    private int unique_coupon_count_per_aff;
-    private int unique_coupon_count_generated;
-    private int coupon_regenerate_threshold_pct;
-    private int max_coupon_use_allowed;
-    private int max_coupon_use_allowed_daily;
-    private int max_coupon_use_allowed_per_pros;
-    private int max_coupon_use_allowed_daily_per_pros;
-    private int camp_is_deleted_flg;
-    private LocalDateTime rec_insert_dtm;
-    private String rec_insert_by;
-    private LocalDateTime rec_update_dtm;
-    private String rec_update_by;
+    private String campPrivateNm;
+    private String publicNm;
+    private CampStatus campStatus;
+    private String campDescr;
+    private CampType campType;
+    private CampaignCategoryRefDto campaignCategoryRef;
+    @JsonSerialize(using = LocalDateSerializer.class)
+    private LocalDate campStartDt;
+    @JsonSerialize(using = LocalDateSerializer.class)
+    private LocalDate campEndDt;
+    private String campGoalsDescr;
+    private int affBaseIncentivePerRefer;
+    @ValidUnit
+    private Unit affBaseIncentivePerReferUnit;
+    private int affIncentivePerRefer;
+    @ValidUnit
+    private Unit affIncentivePerReferUnit;
+    private int affIncentivePerSale;
+    @ValidUnit
+    private Unit affIncentivePerSaleUnit;
+    private int minimumSalePriceForCoupon;
+    private int campApproxCostPerTransact;
+    private int campBudget;
+    private int maxAffAllowed;
+    private int maxProsSubmitAllowed;
+    private int maxProsSubmitAllowedPerAff;
+    @ValidIncentiveMethod
+    private IncentiveMethod prosIncentiveMethod;
+    private int prosIncentivePerTransact;
+    @ValidUnit
+    private Unit prosIncentivePerTransactUnit;
+    @Max(10000)
+    private int uniqueCouponCountTotal;
+    private int uniqueCouponCountPerAff;
+    private int maxCouponUseAllowed;
+    private int maxCouponUseAllowedDaily;
+    private int maxCouponUseAllowedPerPros;
+    private int maxCouponUseAllowedDailyPerPros;
+    private int campIsDeletedFlg;
+    private String createdBy;
+    private String modifiedBy;
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    private LocalDateTime createdDate;
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    private LocalDateTime modifiedDate;
 }

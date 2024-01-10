@@ -2,11 +2,13 @@ package com.trnd.trndapi.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.trnd.trndapi.entity.Token;
 import com.trnd.trndapi.enums.AccountStatus;
 import com.trnd.trndapi.serializer.EmailMaskingSerializer;
 import com.trnd.trndapi.serializer.LocalDateTimeSerializer;
 import com.trnd.trndapi.serializer.MobileMaskingSerializer;
-import com.trnd.trndapi.entity.Token;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,7 +32,8 @@ public class UserDto {
     private String password;
     @JsonSerialize(using = MobileMaskingSerializer.class)
     private String mobile;
-    private boolean isEmailVerified;
+    private boolean emailVerifiedFlag;
+    @Enumerated(EnumType.STRING)
     private AccountStatus userStatus;
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     private LocalDateTime registrationDateTime;

@@ -5,16 +5,12 @@ import com.trnd.trndapi.entity.User;
 import com.trnd.trndapi.enums.AccountStatus;
 import com.trnd.trndapi.enums.ERole;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.control.MappingControl;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 @SpringBootTest
@@ -25,10 +21,10 @@ public class EventPublisherTest {
     @Autowired
     private UserEventListener userEventListener;
 
-//    @MockBean
-//    private ApplicationListener<UserCreatedEvent> eventListener;
+    @MockBean
+    private ApplicationListener<UserCreatedEvent> eventListener;
 
-   // @Test
+    @Test
     public void whenEventPublished_thenEventListenerInvoked() {
         // Create an instance of the event
         User user = User.builder()

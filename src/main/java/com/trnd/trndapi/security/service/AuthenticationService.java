@@ -187,7 +187,10 @@ public class AuthenticationService {
         User savedUser = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(()-> new UsernameNotFoundException("Error: User not found."));
 
         if(savedUser.getUserStatus().equals(AccountStatus.INACTIVE) && !savedUser.getRole().getName().equals(ERole.ROLE_ADMIN)){
-            return ResponseEntity.ok(MessageResponse.builder().message("Account activation pending from trndnow").build());
+            return ResponseEntity.badRequest().body(ResponseDto.builder()
+                    .code(HttpStatus.BAD_REQUEST.value())
+                    .statusCode(HttpStatus.BAD_REQUEST.toString())
+                    .statusMsg("Account activation pending from trndnow").build());
         }
         SecurityContextHolder.getContext().setAuthentication(authentication);
         final String jwtToken = jwtUtils.generateToken(UserDetailsImpl.build(savedUser));

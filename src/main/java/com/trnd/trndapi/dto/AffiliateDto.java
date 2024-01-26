@@ -36,7 +36,7 @@ public class AffiliateDto implements Serializable {
     private String affContactPhone;
     private String affAddrLn1;
     private String affAddrLn2;
-    private AddressDto addrId;
+    private AddressDto addressDto;
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     private LocalDateTime affActivationDtm;
     private AffiliateStatus affStatus;
@@ -45,5 +45,6 @@ public class AffiliateDto implements Serializable {
     private String affPayoutPriCurrencyCd;
     private String affPayoutSecCurrencyCd;
     private ProfileStatus profileStatus;
+    private String affiliateCode;
     private UserDto user;
 }

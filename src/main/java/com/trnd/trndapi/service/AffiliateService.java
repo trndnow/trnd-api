@@ -1,18 +1,21 @@
 package com.trnd.trndapi.service;
 
 import com.trnd.trndapi.dto.AffiliateDto;
+import com.trnd.trndapi.dto.MerchantDto;
 import com.trnd.trndapi.dto.ResponseDto;
-import org.springframework.stereotype.Service;
 
-@Service
+/**
+ *
+ */
 public interface AffiliateService {
     AffiliateDto viewAffiliate(Long id);
 
-    AffiliateDto updateAffiliate(AffiliateDto affiliateDto);
+    ResponseDto updateAffiliate(AffiliateDto affiliateDto);
 
     void deleteAccount(String email);
 
     AffiliateDto createAffiliate(AffiliateDto affiliateDto);
+    AffiliateDto createAffiliate(AffiliateDto affiliateDto, MerchantDto merchantDto);
 
     ResponseDto viewAllAffiliate();
 

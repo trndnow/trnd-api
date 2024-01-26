@@ -1,6 +1,8 @@
 package com.trnd.trndapi.controller;
 
 import com.trnd.trndapi.dto.AffiliateDto;
+import com.trnd.trndapi.dto.ResponseDto;
+import com.trnd.trndapi.enums.ERole;
 import com.trnd.trndapi.security.jwt.SecurityUtils;
 import com.trnd.trndapi.service.AffiliateService;
 import jakarta.validation.Valid;
@@ -20,6 +22,7 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class AffiliateController {
 
+
     private final AffiliateService affiliateService;
 
     public ResponseEntity<?> createAffiliate(@Valid @RequestBody AffiliateDto affiliateDto){
@@ -29,7 +32,7 @@ public class AffiliateController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MERCHANT')")
-    private ResponseEntity<?> viewAffiliate(@PathVariable Long id){
+    public ResponseEntity<?> viewAffiliate(@PathVariable Long id){
         return ResponseEntity.ok(affiliateService.viewAffiliate(id));
 
     }
@@ -47,13 +50,21 @@ public class AffiliateController {
 
     @PostMapping("/update")
     @PreAuthorize("hasRole('ADMIN') or hasRole('AFFILIATE')")
-    private ResponseEntity<?> updateAffiliate(@RequestBody AffiliateDto affiliateDto){
+    public ResponseEntity<?> updateAffiliate(@RequestBody AffiliateDto affiliateDto){
+        String email = SecurityUtils.getLoggedInUserName();
+        if(SecurityUtils.hasRole(ERole.ROLE_AFFILIATE.name()) && !affiliateDto.getAffContactEmail().equals(email)){
+            return ResponseEntity.badRequest().body(ResponseDto.builder()
+                    .statusCode(HttpStatus.BAD_REQUEST.toString())
+                    .statusMsg("ACTION NOT PERMITTED: Cannot update other affiliate profile")
+                    .build()
+            );
+        }
         return ResponseEntity.ok(affiliateService.updateAffiliate(affiliateDto));
     }
 
     @GetMapping("/delete-account")
     @PreAuthorize("hasRole('ADMIN') or hasRole('AFFILIATE')")
-    private ResponseEntity<?> deleteAccount(){
+    public ResponseEntity<?> deleteAccount(){
         String email = SecurityUtils.getLoggedInUserName();
         affiliateService.deleteAccount(email);
         Collection<String> loggedInUserRoles = SecurityUtils.getLoggedInUserRoles();

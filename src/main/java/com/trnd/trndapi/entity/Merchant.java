@@ -1,8 +1,8 @@
 package com.trnd.trndapi.entity;
 
 import com.trnd.trndapi.audit.Auditable;
-import com.trnd.trndapi.enums.ProfileStatus;
 import com.trnd.trndapi.enums.AccountStatus;
+import com.trnd.trndapi.enums.ProfileStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Future;
 import lombok.*;
@@ -29,7 +29,7 @@ public class Merchant extends Auditable<String> {
     private String merchNm;
     @Column(name = "merch_descr")
     private String merchDescr;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "bus_svc_cat_id", referencedColumnName = "bus_svc_cat_id")
     private BusinessServiceCategoryRef businessServiceCategoryRef;
     @Column(name = "merch_status")
@@ -47,16 +47,16 @@ public class Merchant extends Auditable<String> {
     private String merchAddrIn1;
     @Column(name = "merch_addr_in2")
     private String merchAddrIn2;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "addr_id", nullable = true)
     private Address address;
     @Column(name = "merch_pri_contact_first_nm")
     private String merchPriContactFirstNm;
     @Column(name = "merch_pri_contact_last_nm")
     private String merchPriContactLastNm;
-    @Column(name = "merch_pri_contact_email", unique = true)
+    @Column(name = "merch_pri_contact_email", unique = true, updatable = false)
     private String merchPriContactEmail;
-    @Column(name = "merch_pri_contact_phone")
+    @Column(name = "merch_pri_contact_phone", updatable = false)
     private String merchPriContactPhone;
     @Column(name = "merch_sec_contact_first_nm")
     private String merchSecContactFirstNn;

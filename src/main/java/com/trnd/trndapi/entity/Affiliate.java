@@ -39,6 +39,8 @@ public class Affiliate extends Auditable<String> {
     private String affQrCode;
     @Column(name = "aff_unique_code")
     private String affUniqueCode;
+    @Column(name = "affiliate_code")
+    private String affiliateCode;
     @Column(name = "aff_contact_email")
     private String affContactEmail;
     @Column(name = "aff_contact_email_opt")
@@ -49,9 +51,9 @@ public class Affiliate extends Auditable<String> {
     private String affAddrLn1;
     @Column(name = "aff_addr_ln2")
     private String affAddrLn2;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "addr_id",referencedColumnName = "id")
-    private Address addrId;
+    private Address address;
     @Column(name = "aff_activation_dtm")
     private LocalDateTime affActivationDtm;
     @Column(name = "aff_status")

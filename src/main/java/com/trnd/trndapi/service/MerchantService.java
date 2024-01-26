@@ -5,6 +5,8 @@ import com.trnd.trndapi.dto.ResponseDto;
 import com.trnd.trndapi.exception.MerchantNoFoundException;
 import com.trnd.trndapi.security.playload.response.MessageResponse;
 
+import java.util.List;
+
 public interface MerchantService {
 
     MerchantDto createMerchant(MerchantDto merchantDto);
@@ -22,4 +24,14 @@ public interface MerchantService {
     ResponseDto viewProfile();
 
     ResponseDto viewAllMerchant();
+
+    boolean isValidMerchantCode(String merchantCode);
+
+    ResponseDto activateMerchant(MerchantDto merchantByMerchantUniqueCode);
+
+    List<MerchantDto> getMerchantBasic();
+
+    MerchantDto findByMerchantId(long merchId);
+
+    MerchantDto findMerchantByEmail(String loggedInUserEmail);
 }

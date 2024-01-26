@@ -26,7 +26,7 @@ public class Campaign extends Auditable<String> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "camp_id")
     private long campId;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "merch_id")
     private Merchant merchant;
     @Column(name = "camp_private_nm")
@@ -41,7 +41,7 @@ public class Campaign extends Auditable<String> {
     @Enumerated(EnumType.STRING)
     @Column(name = "camp_type")
     private CampType campType;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "camp_cat_id",unique = false)
     private CampaignCategoryRef campaignCategoryRef;
     @Column(name = "camp_start_dt")

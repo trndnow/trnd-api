@@ -1,5 +1,6 @@
 package com.trnd.trndapi.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
@@ -63,6 +64,17 @@ public class CommonUtils {
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(imageBytes)) {
             return ImageIO.read(inputStream);
         }
+    }
+
+    public static String convertObjectToJsonString(Object errorResponse) {
+        String jsonString = "";
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            jsonString = objectMapper.writeValueAsString(errorResponse);
+        } catch (Exception e) {
+            System.out.println("Error converting object to JSON string: " + e.getMessage());
+        }
+        return jsonString;
     }
 
 }

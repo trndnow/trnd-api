@@ -1,5 +1,7 @@
 package com.trnd.trndapi.service;
 
+import com.fasterxml.jackson.annotation.JsonView;
+import com.trnd.trndapi.dto.AddressDto;
 import com.trnd.trndapi.dto.MerchantDto;
 import com.trnd.trndapi.dto.ResponseDto;
 import com.trnd.trndapi.entity.Merchant;
@@ -11,14 +13,17 @@ import com.trnd.trndapi.mapper.MerchantMapper;
 import com.trnd.trndapi.repository.MerchantRepository;
 import com.trnd.trndapi.security.jwt.SecurityUtils;
 import com.trnd.trndapi.security.playload.response.MessageResponse;
+import com.trnd.trndapi.serializer.View;
 import com.trnd.trndapi.utils.DateTimeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -30,6 +35,7 @@ public class MerchantServiceImpl implements MerchantService{
     private final MerchantMapper merchantMapper;
     private final BusinessServiceCategoryRefMapper businessServiceCategoryRefMapper;
     private final AddressMapper addressMapper;
+    private final AddressService addressService;
 
     @Override
     public MerchantDto createMerchant(MerchantDto merchantDto) {
@@ -71,9 +77,22 @@ public class MerchantServiceImpl implements MerchantService{
     }
 
     @Override
+    @Transactional
     public ResponseDto updateMerchant(MerchantDto merchantDto) {
         Merchant merchant = merchantRepository.findById(merchantDto.getMerchId()).orElseThrow(() -> new MerchantNoFoundException("Error: Merchant not found"));
-         /** Merchant name is set at the time of registration */
+       if(Objects.nonNull(merchantDto.getAddressDto())){
+           AddressDto addressDto = addressService.findByIdAndStateCodeAndCityAndZipcodeAndTimezone(merchantDto.getAddressDto());
+           if(Objects.isNull(addressDto))
+               return ResponseDto.builder()
+                       .code(HttpStatus.BAD_REQUEST.value())
+                       .statusCode(HttpStatus.BAD_REQUEST.toString())
+                       .statusMsg("ERROR ADDRESS NOT FOUND")
+                       .build();
+
+           merchant.setAddress(addressMapper.toEntity(addressDto));
+
+       }
+        /** Merchant name is set at the time of registration */
         merchant.setMerchDescr(merchantDto.getMerchDescr());
         merchant.setBusinessServiceCategoryRef(businessServiceCategoryRefMapper.toEntity(merchantDto.getBusinessServiceCategoryRefDto()));
         merchant.setMerchStatus(merchantDto.getMerchStatus());
@@ -82,7 +101,6 @@ public class MerchantServiceImpl implements MerchantService{
         //TODO: Generate the unique link EX: trndnow.com/merchant_code 4906309a-54cd-457e-9a65-835156741485 - should be reduce to max 6 digit
         merchant.setMerchAddrIn1(merchantDto.getMerchAddrIn1());
         merchant.setMerchAddrIn2(merchantDto.getMerchAddrIn2());
-        merchant.setAddress(addressMapper.toEntity(merchantDto.getAddressDto()));
         merchant.setMerchPriContactFirstNm(merchantDto.getMerchPriContactFirstNm());
         merchant.setMerchPriContactLastNm(merchantDto.getMerchPriContactLastNm());
         /**INFO: merch_pri_contact_email  &  merch_pri_contact_phone is already set while registration and cannot be changed.*/
@@ -97,6 +115,7 @@ public class MerchantServiceImpl implements MerchantService{
         Merchant savedMerchant = merchantRepository.save(merchant);
 
         return ResponseDto.builder()
+                .code(HttpStatus.OK.value())
                 .statusCode(HttpStatus.OK.toString())
                 .statusMsg("RECORD UPDATED SUCCESSFULLY")
                 .data(merchantMapper.toDto(savedMerchant))
@@ -178,19 +197,85 @@ public class MerchantServiceImpl implements MerchantService{
     @Override
     public ResponseDto viewAllMerchant() {
         List<Merchant> merchant = merchantRepository.findAll();
-        ResponseDto<?> responseDto = null;
         if(merchant.isEmpty()){
-            responseDto = ResponseDto.builder()
+           return ResponseDto.builder()
+                   .code(HttpStatus.NO_CONTENT.value())
                     .statusCode(HttpStatus.NO_CONTENT.toString())
                     .statusMsg("RECORD NOT FOUND")
                     .build();
-        }else{
-            responseDto = ResponseDto.builder()
-                    .statusCode(HttpStatus.OK.toString())
-                    .statusMsg("RECORD FOUND")
-                    .data(merchantMapper.toDtoList(merchant))
-                    .build();
         }
-        return responseDto;
+        List<MerchantDto> dtoList = merchantMapper.toDtoList(merchant);
+        return ResponseDto.builder()
+                .code(HttpStatus.OK.value())
+                .statusCode(HttpStatus.OK.toString())
+                .statusMsg("RECORD FOUND")
+                .data(dtoList)
+                .build();
+    }
+
+
+
+
+//    @Override
+//    public List<MerchantDto> viewAllMerchant() {
+//        List<Merchant> merchant = merchantRepository.findAll();
+//        List<MerchantDto> dtoList = merchantMapper.toDtoList(merchant);
+//        return dtoList;
+//    }
+
+    /**
+     * @param merchantCode
+     * @return
+     */
+    @Override
+    public boolean isValidMerchantCode(String merchantCode) {
+        return merchantRepository.existsByMerchantCode(merchantCode);
+    }
+
+    /**
+     * @param merchantByMerchantUniqueCode
+     * @return
+     */
+    @Override
+    public ResponseDto activateMerchant(MerchantDto merchantDto) {
+        Merchant merchant = merchantRepository.findById(merchantDto.getMerchId()).orElseThrow(() -> new MerchantNoFoundException("Error: Merchant not found"));
+        merchant.setMerchStatus(merchantDto.getMerchStatus());
+        merchant.setMerchActivationDtm(merchant.getMerchActivationDtm());
+        Merchant savedMerchant = merchantRepository.save(merchant);
+
+        return ResponseDto.builder()
+                .code(HttpStatus.OK.value())
+                .statusCode(HttpStatus.OK.toString())
+                .statusMsg("MERCHANT ACTIVATED SUCCESSFULLY")
+                .data(merchantMapper.toDto(savedMerchant))
+                .build();
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    @JsonView(View.Basic.class)
+    public List<MerchantDto> getMerchantBasic() {
+        return  merchantMapper.toDtoList(merchantRepository.findAll());
+    }
+
+    /**
+     * @param merchId
+     * @return
+     */
+    @Override
+    public MerchantDto findByMerchantId(long merchId) {
+        return merchantMapper.toDto(merchantRepository.findByMerchId(merchId));
+    }
+
+    /**
+     * @param loggedInUserEmail
+     * @return
+     */
+    @Override
+    public MerchantDto findMerchantByEmail(String loggedInUserEmail) {
+        Merchant byMerchPriContactEmail = merchantRepository.findByMerchPriContactEmail(loggedInUserEmail);
+        return merchantMapper.toDto(byMerchPriContactEmail);
     }
 }

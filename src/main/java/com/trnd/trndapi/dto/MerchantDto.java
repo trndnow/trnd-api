@@ -1,12 +1,17 @@
 package com.trnd.trndapi.dto;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.trnd.trndapi.enums.ProfileStatus;
 import com.trnd.trndapi.entity.Merchant;
 import com.trnd.trndapi.enums.AccountStatus;
+import com.trnd.trndapi.enums.ProfileStatus;
 import com.trnd.trndapi.serializer.LocalDateTimeSerializer;
+import com.trnd.trndapi.serializer.View;
 import jakarta.validation.constraints.Future;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -26,13 +31,17 @@ public class MerchantDto implements Serializable {
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     private LocalDateTime modifiedDate;
     private long merchId;
+    @JsonView(View.Basic.class)
     private String merchNm;
     private String merchDescr;
     private BusinessServiceCategoryRefDto businessServiceCategoryRefDto;
     private AccountStatus merchStatus;
     private String logoUrl;
+    @JsonView(View.Basic.class)
     private String merchUniqueLink;
+    @JsonView(View.Basic.class)
     private String merchQrCode;
+    @JsonView(View.Basic.class)
     private String merchUniqueCode;
     private String merchAddrIn1;
     private String merchAddrIn2;
@@ -50,6 +59,7 @@ public class MerchantDto implements Serializable {
     private String merchTransactPriCurrencyCd;
     private String merchTransactSecCurrencyCd;
     private String merchIsDeletedFlg;
+    @JsonView(View.Basic.class)
     private String merchantCode;
     private ProfileStatus profileStatus;
     @JsonSerialize(using = LocalDateTimeSerializer.class)

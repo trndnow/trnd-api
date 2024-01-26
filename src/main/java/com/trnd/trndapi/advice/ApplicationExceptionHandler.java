@@ -4,6 +4,7 @@ import com.trnd.trndapi.dto.ResponseDto;
 import com.trnd.trndapi.enums.ERole;
 import com.trnd.trndapi.exception.MerchantNoFoundException;
 import com.trnd.trndapi.security.jwt.SecurityUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
+@Slf4j
 public class ApplicationExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

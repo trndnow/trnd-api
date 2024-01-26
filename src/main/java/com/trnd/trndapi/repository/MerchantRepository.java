@@ -19,4 +19,12 @@ public interface MerchantRepository extends JpaRepository<Merchant, Long> {
 
     @Query("SELECT m FROM Merchant m WHERE m.merchantCode = :merchantCode")
     Optional<Merchant> findByMerchantCode(String merchantCode);
+
+    boolean existsByMerchantCodeIgnoreCase(String merchantCode);
+
+    boolean existsByMerchantCode(String merchantCode);
+
+    Merchant findByMerchId(long merchId);
+
+    Merchant findByMerchPriContactEmail(String merchPriContactEmail);
 }

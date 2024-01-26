@@ -81,6 +81,7 @@ public class UserEventListener {
 
     @Transactional
     public void onBoardAffiliate(UserCreatedEvent event) throws WriterException, IOException {
+        MerchantDto merchantDto = merchantService.getMerchantByMerchantCode(event.getSignupRequest().getMerchantCode());
         AffiliateDto affiliateDto = AffiliateDto.builder()
                 .affContactEmail(event.getUser().getEmail())
                 .affContactPhone(event.getUser().getMobile())
@@ -91,11 +92,11 @@ public class UserEventListener {
                 .createdDate(LocalDateTime.now())
                 .user(userMapper.toDto(event.getUser()))
                 .build();
-        AffiliateDto savedAffiliateDto =  affiliateService.createAffiliate(affiliateDto);
+        AffiliateDto savedAffiliateDto =  affiliateService.createAffiliate(affiliateDto,merchantDto);
 
-        MerchantDto merchantDto = merchantService.getMerchantByMerchantCode(event.getSignupRequest().getMerchantCode());
 
-        CampaignDto campaignDto = campaignService.getCampaignByMerchantCode(event.getSignupRequest().getMerchantCode());
+
+        CampaignDto campaignDto = campaignService.getCampaignByMerchantID(merchantDto.getMerchId());
         String campaignUniqueCode = CommonUtils.generateUniqueCode();
         String campaignUniqueLink = CommonUtils.createCampaignUniqueLink(campaignUniqueCode);
         String qrCodeImageAsBase64 = CommonUtils.generateQRCodeImageAsBase64(campaignUniqueLink, 250, 250);

@@ -1,7 +1,7 @@
 package com.trnd.trndapi.security.service;
 
+import com.trnd.trndapi.dto.ErrorResponse;
 import com.trnd.trndapi.dto.ResponseDto;
-import com.trnd.trndapi.entity.Merchant;
 import com.trnd.trndapi.entity.Role;
 import com.trnd.trndapi.entity.Token;
 import com.trnd.trndapi.entity.User;
@@ -18,9 +18,9 @@ import com.trnd.trndapi.security.playload.request.LoginRequest;
 import com.trnd.trndapi.security.playload.request.SignupRequest;
 import com.trnd.trndapi.security.playload.request.TokenRefreshRequest;
 import com.trnd.trndapi.security.playload.response.JwtResponse;
-import com.trnd.trndapi.security.playload.response.MessageResponse;
 import com.trnd.trndapi.security.playload.response.TokenRefreshResponse;
 import com.trnd.trndapi.service.*;
+import com.trnd.trndapi.validation.UserRegistrationValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -36,12 +36,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.BindingResult;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @RequiredArgsConstructor
@@ -61,80 +61,54 @@ public class AuthenticationService {
     private final CodeGeneratorService codeGeneratorService;
     public final BusinessServiceCategoryService businessServiceCategoryService;
     private final MerchantService merchantService;
+    private final UserRegistrationValidator registrationValidator;
 
+    /**
+     * Registers a new user.
+     *
+     * @param signupRequest the signup request object containing user details
+     * @param bindingResult the binding result object for request validation
+     *
+     * @return the response entity containing the user registration status and information
+     */
     @Transactional
-    public ResponseEntity<?> registerUser(SignupRequest signupRequest) {
+    public ResponseEntity<?> registerUser(SignupRequest signupRequest, BindingResult bindingResult) {
+        ResponseEntity<?> BAD_REQUEST = validateSignupRequest(signupRequest, bindingResult);
+        if (BAD_REQUEST != null) return BAD_REQUEST;
 
-        if(signupRequest.getRole().equals(ERole.ROLE_MERCHANT) && signupRequest.getMerchantName().isEmpty()){
-            return ResponseEntity.badRequest().body(MessageResponse.builder()
-                    .message("Merchant Name is mandatory to register as merchant.")
-                    .statusCode(HttpStatus.BAD_REQUEST.toString()).build()
-            );
-        }
-        if(signupRequest.getRole().equals(ERole.ROLE_AFFILIATE) && signupRequest.getMerchantCode().isEmpty()){
-            return ResponseEntity.badRequest().body(MessageResponse.builder()
-                    .message("Merchant Code is mandatory to register as Affiliate.")
-                    .statusCode(HttpStatus.BAD_REQUEST.toString()).build());
-        }
-        if(signupRequest.getRole().equals(ERole.ROLE_AFFILIATE) && !signupRequest.getMerchantCode().isEmpty()){
-            /** CHECK IF MERCHANT_CODE IS VALID
-             */
-            Optional<Merchant> byMerchantCode = merchantRepository.findByMerchantCode(signupRequest.getMerchantCode());
-            if(byMerchantCode.isEmpty()){
-                return ResponseEntity.badRequest().body(MessageResponse.builder()
-                        .message("Merchant Code is invalid").statusCode(HttpStatus.BAD_REQUEST.toString()).build());
-            }
-        }
+        Role userRole = resolveUserRole(signupRequest);
+        String uniqueCode = codeGeneratorService.generateUniqueCode(userRole.getName().name());
+        User user = createUser(signupRequest, userRole, uniqueCode);
+        updateUserStatusIfAdmin(signupRequest, user);
 
-        if (userRepository.existsByMobile(signupRequest.getMobile())) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Mobile is already exist"));
-        }
+        //** Call user service */
+        User savedUser =  userRepository.save(user);
 
-        if (userRepository.existsByEmail(signupRequest.getEmail())) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is already in use!"));
-        }
-        if(!otpService.validateOtp(signupRequest.getEmail(),signupRequest.getOtp()) && !signupRequest.getRole().name().equalsIgnoreCase(ERole.ROLE_ADMIN.toString())){
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: OTP Expired!"));
-        }
-        //TODO: Check if Admin already exist dont create the account.
-        if(signupRequest.getRole().equals(ERole.ROLE_ADMIN)){
-            Boolean userByRoleName = userRepository.existsUserByRoleName(signupRequest.getRole());
-            if(userByRoleName)
-                return ResponseEntity.badRequest().body( new MessageResponse("Cannot register as admin role"));
-        }
-        //     String
-        AtomicReference<String> currentActiveRole = new AtomicReference<>();
-        if(signupRequest.getRole().name().isEmpty()){
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Role cannot be empty"));
-        }
-        Optional<Role> userRole = Optional.empty();
-        switch (signupRequest.getRole()) {
-            case ROLE_ADMIN:
-                Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                        .orElseThrow(() -> new RuntimeException("Error: Role is not found"));
-                currentActiveRole.set("ADMIN");
-                 userRole = Optional.ofNullable(adminRole);
-                break;
-            case ROLE_MERCHANT:
-                Role merchantRole = roleRepository.findByName(ERole.ROLE_MERCHANT)
-                        .orElseThrow(() -> new RuntimeException("Error: Role is not found"));
-                currentActiveRole.set("MERCHANT");
-                userRole = Optional.ofNullable(merchantRole);
-                break;
-            case ROLE_AFFILIATE:
-                Role affiliateRole = roleRepository.findByName(ERole.ROLE_AFFILIATE)
-                        .orElseThrow(() -> new RuntimeException("Error: Role is not found"));
-                currentActiveRole.set("AFFILIATE");
-                userRole = Optional.ofNullable(affiliateRole);
-                break;
-            default:
-                throw new RuntimeException("Error: Role is not found");
-        }
+        /**:Trigger User registration event */
+        UserCreatedEvent userCreatedEvent = new UserCreatedEvent(savedUser, signupRequest);
+        applicationEventPublisher.publishEvent(userCreatedEvent);
 
+        return buildResponse(savedUser);
 
-        String uniqueCode = codeGeneratorService.generateUniqueCode(currentActiveRole.get().toString());
+    }
+    private ResponseEntity<?> buildResponse(User savedUser){
+        return ResponseEntity.ok(ResponseDto.builder()
+                .code(HttpStatus.CREATED.value())
+                .statusCode(HttpStatus.CREATED.toString())
+                .statusMsg("User Created Successfully")
+                .data(
+                        JwtResponse.builder()
+                                .username(savedUser.getMobile())
+                                .email(savedUser.getEmail())
+                                .uuid(savedUser.getUniqueId())
+                                .role(savedUser.getRole().getName())
+                                .build()
+                )
+                .build());
+    }
 
-        User user = User.builder()
+    private User createUser(SignupRequest signupRequest, Role userRole, String uniqueCode){
+        return User.builder()
                 .email(signupRequest.getEmail())
                 .uniqueId(UUID.randomUUID())
                 .userCode(uniqueCode)
@@ -144,41 +118,73 @@ public class AuthenticationService {
                 .softDeleted(false)
                 .emailVerifiedFlag(true)
                 .registrationDateTime(LocalDateTime.now())
-                .role(userRole.get())
+                .role(userRole)
                 .build();
+    }
+    private void updateUserStatusIfAdmin(SignupRequest signupRequest, User user){
         if(signupRequest.getRole().equals(ERole.ROLE_ADMIN)){
             user.setUserStatus(AccountStatus.ACTIVE);
             user.setEmailVerifiedFlag(true);
         }
+    }
 
-        //TODO: Call user service
-        User savedUser =  userRepository.save(user);
+    private ResponseEntity<?> validateSignupRequest(SignupRequest signupRequest, BindingResult bindingResult) {
+        List<String> validationErrors = new ArrayList<>();
 
-//        String jwtToken = jwtUtils.generateToken(UserDetailsImpl.build(user));
-//        String refreshToken = jwtUtils.generateRefreshToken(UserDetailsImpl.build(user));
-//        savedUserToken(savedUser, jwtToken);
+        // Add Spring's validation errors
+        if (bindingResult.hasErrors()) {
+            bindingResult.getAllErrors().forEach(error -> validationErrors.add(error.getDefaultMessage()));
+        }
 
-        /**:Trigger User registration event */
-        UserCreatedEvent userCreatedEvent = new UserCreatedEvent(savedUser, signupRequest);
-        applicationEventPublisher.publishEvent(userCreatedEvent);
+        // Add custom validation errors
+        validationErrors.addAll(registrationValidator.validate(signupRequest));
+        if (!validationErrors.isEmpty()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(
+                            ErrorResponse.builder()
+                                    .code(HttpStatus.BAD_REQUEST.value())
+                                    .statusCode(HttpStatus.BAD_REQUEST.toString())
+                                    .statusMsg(validationErrors).build()
 
 
-        return   ResponseEntity.ok(ResponseDto.builder()
-                .code(HttpStatus.CREATED.value())
-                .statusCode(HttpStatus.CREATED.toString())
-                .statusMsg("User Created Successfully")
-                        .data(
-                                JwtResponse.builder()
-                                        .username(savedUser.getMobile())
-                                        .email(savedUser.getEmail())
-                                        .uuid(savedUser.getUniqueId())
-//                                      .accessToken(jwtToken)
-//                                      .refreshToken(refreshToken)
-                                        .role(savedUser.getRole().getName())
-                                        .build()
-                        )
-                .build());
+                    );
+        }
 
+        if(!otpService.validateOtp(signupRequest.getEmail(), signupRequest.getOtp()) && !signupRequest.getRole().name().equalsIgnoreCase(ERole.ROLE_ADMIN.toString())){
+            return ResponseEntity.badRequest().body(
+                    ResponseDto.builder()
+                            .code(HttpStatus.BAD_REQUEST.value())
+                            .statusCode(HttpStatus.BAD_REQUEST.toString())
+                            .statusMsg("OTP Expired!")
+                            .build()
+            );
+        }
+        return null;
+    }
+
+    private Role resolveUserRole(SignupRequest signupRequest) {
+        Role userRole;
+        switch (signupRequest.getRole()) {
+            case ROLE_ADMIN:
+                Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
+                        .orElseThrow(() -> new RuntimeException("Error: Role is not found"));
+                 userRole = adminRole;
+                break;
+            case ROLE_MERCHANT:
+                Role merchantRole = roleRepository.findByName(ERole.ROLE_MERCHANT)
+                        .orElseThrow(() -> new RuntimeException("Error: Role is not found"));
+                userRole = merchantRole;
+                break;
+            case ROLE_AFFILIATE:
+                Role affiliateRole = roleRepository.findByName(ERole.ROLE_AFFILIATE)
+                        .orElseThrow(() -> new RuntimeException("Error: Role is not found"));
+                userRole = affiliateRole;
+                break;
+            default:
+                throw new RuntimeException("Error: Role is not found");
+        }
+        return userRole;
     }
 
     public ResponseEntity<?> authenticateUser(LoginRequest loginRequest){
@@ -187,12 +193,27 @@ public class AuthenticationService {
         User savedUser = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(()-> new UsernameNotFoundException("Error: User not found."));
 
         if(savedUser.getUserStatus().equals(AccountStatus.INACTIVE) && !savedUser.getRole().getName().equals(ERole.ROLE_ADMIN)){
-            return ResponseEntity.badRequest().body(ResponseDto.builder()
+            return ResponseEntity.badRequest().body(ErrorResponse.builder()
                     .code(HttpStatus.BAD_REQUEST.value())
                     .statusCode(HttpStatus.BAD_REQUEST.toString())
-                    .statusMsg("Account activation pending from trndnow").build());
+                    .statusMsg("Account activation pending from trndnow")
+                    .build());
         }
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        JwtResponse jwtResponse = createJwtResponse(savedUser);
+
+        /**Calculate user profile completion percentage */
+        if(!savedUser.getRole().getName().equals(ERole.ROLE_ADMIN)){
+            int profileCompletionPercentage = calculateProfileCompleteness(savedUser);
+            if (profileCompletionPercentage > REQUIRED_COMPLETENESS_PERCENTAGE ) {
+                jwtResponse.setProfileCompleted(true);
+                jwtResponse.setProfileCompletionPercentage(profileCompletionPercentage);
+            }
+        }
+        return   ResponseEntity.ok().body(jwtResponse);
+    }
+
+    private JwtResponse createJwtResponse(User savedUser) {
         final String jwtToken = jwtUtils.generateToken(UserDetailsImpl.build(savedUser));
         final String refreshToken = jwtUtils.generateToken(UserDetailsImpl.build(savedUser));
         revokeAllUserToken(savedUser);
@@ -206,16 +227,7 @@ public class AuthenticationService {
                 .refreshToken(refreshToken)
                 .role(savedUser.getRole().getName())
                 .build();
-
-        /**Calculate user profile completion percentage */
-        if(!savedUser.getRole().getName().equals(ERole.ROLE_ADMIN)){
-            int profileCompletionPercentage = calculateProfileCompleteness(savedUser);
-            if (profileCompletionPercentage > REQUIRED_COMPLETENESS_PERCENTAGE ) {
-                jwtResponse.setProfileCompleted(true);
-                jwtResponse.setProfileCompletionPercentage(profileCompletionPercentage);
-            }
-        }
-        return   ResponseEntity.ok().body(jwtResponse);
+        return jwtResponse;
     }
 
     private int calculateProfileCompleteness(User savedUser) {

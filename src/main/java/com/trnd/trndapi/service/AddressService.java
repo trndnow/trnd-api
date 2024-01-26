@@ -12,4 +12,5 @@ public interface AddressService {
     ResponseDto getAllAddress();
 
     List<AddressDto> searchAddresses(String term);
+    AddressDto findByIdAndStateCodeAndCityAndZipcodeAndTimezone(AddressDto addressDto);
 }

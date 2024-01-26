@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -58,15 +59,14 @@ public class CampaignServiceImpl implements CampaignService{
      */
     @Override
     public CampaignDto defaultCampaignAssociation(MerchantDto merchantDto) {
-        //TODO: Create a method to return DefaultCampaign for the given merchant.
-      try{
-          Campaign campaign =  createDefaultCampaign(merchantDto);
-          Campaign saveCampaign = campaignRepository.save(campaign);
-          return campaignMapper.toDto(saveCampaign);
-      }catch (Exception exception){
-          log.error("ERROR: SAVING ASSOCIATING DEFAULT CAMPAIGN");
-      }
-        return null;
+        Campaign byMerchantCodeOrMerchUniqueCode = campaignRepository.findByMerchant_MerchantCodeOrMerchant_MerchUniqueCode(merchantDto.getMerchantCode(), merchantDto.getMerchUniqueCode());
+        if(Objects.isNull(byMerchantCodeOrMerchUniqueCode)){
+            Campaign campaign =  createDefaultCampaign(merchantDto);
+            Campaign saveCampaign = campaignRepository.save(campaign);
+            return campaignMapper.toDto(saveCampaign);
+        }
+        log.info("MERCHANT DEFAULT CAMPAIGN ASSOCIATION ALREADY EXIST {} ",byMerchantCodeOrMerchUniqueCode.getCampId());
+        return campaignMapper.toDto(byMerchantCodeOrMerchUniqueCode);
     }
 
     /**
@@ -107,6 +107,17 @@ public class CampaignServiceImpl implements CampaignService{
                 .statusMsg("RECORDS FOUND")
                 .data(campaignMapper.toDtoList(campaignByMerchantCode))
                 .build();
+    }
+
+    /**
+     * @param merchId
+     * @return
+     */
+    @Override
+    public CampaignDto getCampaignByMerchantID(long merchId) {
+        MerchantDto merchantDto = merchantService.findByMerchantId(merchId);
+        Campaign campaignByMerchantCode = campaignRepository.findByMerchant_MerchIdAndCampaignCategoryRef_CampCatNm(merchId,"Default");
+        return campaignMapper.toDto(campaignByMerchantCode);
     }
 
     private Campaign createDefaultCampaign(MerchantDto merchantDto) {

@@ -6,20 +6,19 @@ import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
-        componentModel = MappingConstants.ComponentModel.SPRING,
-        uses = BusinessServiceCategoryRefMapper.class,
-        injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = MappingConstants.ComponentModel.SPRING,
+        uses = {BusinessServiceCategoryRefMapper.class, AddressMapper.class }, injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface MerchantMapper {
-
+    @Mapping(target = "address", source = "addressDto")
     @Mapping(target = "businessServiceCategoryRef", source = "businessServiceCategoryRefDto")
     Merchant toEntity(MerchantDto merchantDto);
 
-    List<Merchant> toEntityList(List<MerchantDto> merchantDtoList);
 
-    @Mapping( target = "businessServiceCategoryRefDto", source = "businessServiceCategoryRef")
+    @Mapping(target = "addressDto", source = "address")
+    @Mapping(target = "businessServiceCategoryRefDto", source = "businessServiceCategoryRef")
     MerchantDto toDto(Merchant merchant);
+
+    List<Merchant> toEntityList(List<MerchantDto> merchantDtoList);
 
     List<MerchantDto> toDtoList(List<Merchant> merchantList);
 

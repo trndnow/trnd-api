@@ -1,7 +1,6 @@
 package com.trnd.trndapi.service;
 
 import com.trnd.trndapi.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +26,7 @@ public class CodeGeneratorService {
     public synchronized String generateUniqueCode(String userType){
         String uniqueCode;
         do{
-            uniqueCode = createCode(userType.charAt(0));
+            uniqueCode = createCode(userType.charAt(5));
         }while(codeCache.contains(uniqueCode));
 
         codeCache.add(uniqueCode);

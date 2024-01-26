@@ -41,6 +41,11 @@ public class AddressServiceImpl implements AddressService{
 
     }
 
+    public AddressDto findByIdAndStateCodeAndCityAndZipcodeAndTimezone(AddressDto addressDto){
+        Address byIdAndStateCodeAndCityAndZipcodeAndTimezone = addressRepository.findByIdAndStateCodeAndCityAndZipcodeAndTimezone(addressDto.getId(), addressDto.getStateCode(), addressDto.getCity(), addressDto.getZipcode(), addressDto.getTimezone());
+        return addressMapper.toDto(byIdAndStateCodeAndCityAndZipcodeAndTimezone);
+    }
+
     /**
      * @param term
      * @return

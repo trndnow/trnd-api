@@ -1,9 +1,11 @@
 package com.trnd.trndapi.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.trnd.trndapi.dto.MerchantDto;
+import com.trnd.trndapi.dto.ResponseDto;
 import com.trnd.trndapi.enums.ERole;
 import com.trnd.trndapi.security.jwt.SecurityUtils;
-import com.trnd.trndapi.security.playload.response.MessageResponse;
+import com.trnd.trndapi.serializer.View;
 import com.trnd.trndapi.service.MerchantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.List;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -35,6 +38,15 @@ public class MerchantController {
         return ResponseEntity.ok(merchantService.viewMerchant(id));
     }
 
+
+    @GetMapping("/basic/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    @JsonView(View.Basic.class)
+    public ResponseEntity<?> getMerchantBasic(){
+        List<MerchantDto> merchantBasic = merchantService.getMerchantBasic();
+        return ResponseEntity.ok().body(merchantBasic);
+    }
+
     @GetMapping("/view_profile")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MERCHANT')")
     public ResponseEntity<?> viewProfile(){
@@ -48,18 +60,16 @@ public class MerchantController {
     }
 
     @PostMapping("/update")
-    @PreAuthorize("hasRole('MERCHANT')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MERCHANT')")
     public ResponseEntity<?> updateMerchant(@RequestBody MerchantDto merchantDto){
-        if(SecurityUtils.hasRole(ERole.ROLE_MERCHANT.name())){
-            log.info("LOGGED IN USER IS MERCHANT");
-            String loggedInUserName = SecurityUtils.getLoggedInUserName();
-            if(merchantDto.getMerchPriContactEmail().equals(loggedInUserName))
-                return ResponseEntity.badRequest().body(MessageResponse.builder()
-                        .statusCode(HttpStatus.BAD_REQUEST.toString())
-                        .message("Action not permitted")
-                        .build()
-                );
-
+        log.info("LOGGED IN USER IS MERCHANT");
+        String email = SecurityUtils.getLoggedInUserName();
+        if(SecurityUtils.hasRole(ERole.ROLE_MERCHANT.name()) && !merchantDto.getMerchPriContactEmail().equals(email)){
+            return ResponseEntity.badRequest().body(ResponseDto.builder()
+                    .statusCode(HttpStatus.BAD_REQUEST.toString())
+                    .statusMsg("ACTION NOT PERMITTED: Cannot update other merchants profile")
+                    .build()
+            );
         }
         return ResponseEntity.ok(merchantService.updateMerchant(merchantDto));
     }

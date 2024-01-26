@@ -19,4 +19,6 @@ public interface CampaignService {
     CampaignDto getCampaignByMerchantCode(String merchantCode);
 
     ResponseDto viewCampaignByMerchantCode(String merchantCode);
+
+    CampaignDto getCampaignByMerchantID(long merchId);
 }

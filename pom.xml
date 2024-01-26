@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.trnd</groupId>
     <artifactId>trnd-api</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
     <name>trnd-api</name>
     <description>trnd-api</description>
     <properties>
